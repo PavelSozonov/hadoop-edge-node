@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hadoop-edge-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hadoop-edge-node
+  template:
+    metadata:
+      labels:
+        app: hadoop-edge-node
+    spec:
+      containers:
+        - name: hadoop-edge-node
+          image: hadoop-edge-node:latest
+          env:
+            - name: NEXUS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: nexus-config
+                  key: NEXUS_URL
+            - name: NEXUS_LOGIN
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-credentials
+                  key: NEXUS_LOGIN
+            - name: NEXUS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-credentials
+                  key: NEXUS_PASSWORD
+          volumeMounts:
+            - name: krb5-config
+              mountPath: /etc/krb5.conf
+              subPath: krb5.conf
+            - name: keytab
+              mountPath: /home/hadoopuser/.keytab
+              subPath: keytab
+            - name: hadoop-config
+              mountPath: /config
+      volumes:
+        - name: krb5-config
+          configMap:
+            name: krb5-config
+        - name: keytab
+          secret:
+            secretName: hadoop-keytab
+        - name: hadoop-config
+          configMap:
+            name: hadoop-config
